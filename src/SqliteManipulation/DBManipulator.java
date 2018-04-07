@@ -29,20 +29,12 @@ public class DBManipulator {
      * Creates the necessary tables if they do not exist
      */
     public DBManipulator(){
-        attendance = createNewDatabase("attendance.sqlite");
-        try{
-            if(attendance != null)
-                attendance_meta = attendance.getMetaData();
-        }
-        catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
+        connectToDatabase();
 
         String students_sql = "CREATE TABLE IF NOT EXISTS students (\n"
                 + " id integer PRIMARY KEY, \n"
                 + " name text NOT NULL, \n"
-                + " group_id integer, \n"
-                + " UNIQUE(id) \n"
+                + " group_id integer \n"
                 + ");";
         createNewTable(students_sql);
 
@@ -51,31 +43,31 @@ public class DBManipulator {
                 + " date text NOT NULL, \n"
                 + " group_id integer NOT NULL, \n"
                 + " student_id integer NOT NULL, \n"
-                + " attend integer NOT NULL, \n"
-                + " UNIQUE(id)"
+                + " attend integer NOT NULL \n"
                 + ");";
         createNewTable(lectures_sql);
 
         String groups_sql = "CREATE TABLE IF NOT EXISTS groups (\n"
                 + " id integer PRIMARY KEY, \n"
-                + " group text NOT NULL, \n"
-                + " UNIQUE(id, group)"
+                + " group_string text UNIQUE \n"
                 + ");";
         createNewTable(groups_sql);
 
     }
 
     @Nullable
-    private static Connection createNewDatabase(String fileName) {
-        String url = "jdbc:sqlite:../" + fileName;
+    private void connectToDatabase() {
+        String url = "jdbc:sqlite:" + "attendance.sqlite";
 
-        try (Connection conn = DriverManager.getConnection(url)) {
-            return conn;
-
-        } catch (SQLException e) {
+        try{
+            Connection conn = DriverManager.getConnection(url);
+            attendance = conn;
+            if(attendance != null)
+                attendance_meta = attendance.getMetaData();
+        }
+        catch (SQLException e) {
             System.out.println(e.getMessage());
         }
-        return null;
     }
 
     private boolean tableExists(String tableName){
@@ -94,6 +86,7 @@ public class DBManipulator {
             Statement stmt = attendance.createStatement();
             stmt.execute(sql_command);
         } catch (SQLException e) {
+            System.out.println("Oh no");
             System.out.println(e.getMessage());
         }
     }
@@ -105,7 +98,7 @@ public class DBManipulator {
             Integer[] data = id.toArray(new Integer[id.size()]);
             java.sql.Array sqlArray = attendance.createArrayOf("integer", data);
             stmt.setArray(1, sqlArray);
-            ResultSet rs = stmt.executeQuery(sql);
+            ResultSet rs = stmt.executeQuery();
             return rs;
         }
         catch (SQLException e) {
@@ -115,21 +108,16 @@ public class DBManipulator {
     }
 
     private int getGroupId(String group){
-        String sql = "SELECT id FROM groups WHERE group = ?";
+        String sql = "SELECT id FROM groups WHERE group_string = ?";
 
-        try (PreparedStatement stmt  = attendance.prepareStatement(sql)){
+        try{
+            PreparedStatement stmt  = attendance.prepareStatement(sql);
             stmt.setString(1, group);
-            ResultSet rs    = stmt.executeQuery(sql);
+            ResultSet rs = stmt.executeQuery();
 
-            // loop through the result set
-            while (rs.next()) {
+            if(rs.next())
                 return rs.getInt("id");
-                /*
-                System.out.println(rs.getInt("id") +  "\t" +
-                        rs.getString("name") + "\t" +
-                        rs.getDouble("capacity"));
-                */
-            }
+
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -141,10 +129,10 @@ public class DBManipulator {
      * @return ResultSet of all the groups
      */
     public ResultSet getAllGroups(){
-        String sql = "SELECT group FROM group";
+        String sql = "SELECT group_string FROM groups";
 
-        try (Statement stmt  = attendance.createStatement()){
-            stmt.execute(sql);
+        try{
+            Statement stmt  = attendance.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
             return rs;
         }
@@ -165,9 +153,10 @@ public class DBManipulator {
         if(group_id == -1)
             return null;
 
-        try (PreparedStatement stmt  = attendance.prepareStatement(sql)){
+        try{
+            PreparedStatement stmt  = attendance.prepareStatement(sql);
             stmt.setInt(1, group_id);
-            ResultSet rs = stmt.executeQuery(sql);
+            ResultSet rs = stmt.executeQuery();
             return rs;
         }
         catch (SQLException e) {
@@ -183,9 +172,10 @@ public class DBManipulator {
      */
     public ResultSet getStudent(int id){
         String sql = "SELECT * FROM students WHERE id = ?";
-        try (PreparedStatement stmt  = attendance.prepareStatement(sql)){
+        try{
+            PreparedStatement stmt  = attendance.prepareStatement(sql);
             stmt.setInt(1, id);
-            ResultSet rs    = stmt.executeQuery(sql);
+            ResultSet rs = stmt.executeQuery();
             return rs;
         }
         catch (SQLException e) {
@@ -202,18 +192,19 @@ public class DBManipulator {
      * @return ResultSet of all students who attended or not on a certain date
      */
     public ResultSet getGroupAttend(String group, String date, boolean attend){
-        String sql = "SELECT student_id FROM attendance WHERE date = ? AND attend = ? AND group = ?";
+        String sql = "SELECT student_id FROM attendance WHERE date = ? AND attend = ? AND group_id = ?";
 
         int group_id = getGroupId(group);
         if(group_id == -1)
             return null;
 
-        try (PreparedStatement stmt  = attendance.prepareStatement(sql)){
+        try{
+            PreparedStatement stmt  = attendance.prepareStatement(sql);
             stmt.setString(1, date);
             stmt.setInt(2, attend? 1 : 0);
             stmt.setInt(3, group_id);
             List<Integer> sets = new ArrayList<>();
-            ResultSet rs = stmt.executeQuery(sql);
+            ResultSet rs = stmt.executeQuery();
             while(rs.next()){
                 int student_id = rs.getInt("student_id");
                 sets.add(student_id);
@@ -235,9 +226,10 @@ public class DBManipulator {
     public int getStudentOnDate(String date, int student_id){
         String sql = "SELECT attend FROM attendance WHERE date = ? AND student_id = ?";
 
-        try (PreparedStatement stmt  = attendance.prepareStatement(sql)){
+        try{
+            PreparedStatement stmt  = attendance.prepareStatement(sql);
             stmt.setString(1, date);
-            ResultSet rs = stmt.executeQuery(sql);
+            ResultSet rs = stmt.executeQuery();
             return rs.getInt("attend");
         }
         catch (SQLException e) {
@@ -255,19 +247,20 @@ public class DBManipulator {
      * @return ResultSet of all students matching criteria
      */
     public ResultSet getAllGroupAttend(String group, String start, String end, boolean attend){
-        String sql = "SELECT student_id FROM attendance WHERE attend = ? AND group = ? AND date BETWEEN ? AND ?";
+        String sql = "SELECT student_id FROM attendance WHERE attend = ? AND group_id = ? AND date BETWEEN ? AND ?";
 
         int group_id = getGroupId(group);
         if(group_id == -1)
             return null;
 
-        try (PreparedStatement stmt  = attendance.prepareStatement(sql)){
+        try{
+            PreparedStatement stmt  = attendance.prepareStatement(sql);
             stmt.setInt(1, attend? 1 : 0);
             stmt.setInt(2, group_id);
             stmt.setString(3, start);
             stmt.setString(4, end);
             List<Integer> sets = new ArrayList<>();
-            ResultSet rs = stmt.executeQuery(sql);
+            ResultSet rs = stmt.executeQuery();
             while(rs.next()){
                 int student_id = rs.getInt("student_id");
                 sets.add(student_id);
@@ -285,9 +278,10 @@ public class DBManipulator {
      * @param group - Unique string identifier of a group
      */
     public void insertToGroups(String group){
-        String sql = "INSERT INTO groups(group) VALUES(?)";
+        String sql = "INSERT INTO groups(group_string) VALUES(?)";
 
-        try(PreparedStatement preped = attendance.prepareStatement(sql)) {
+        try{
+            PreparedStatement preped = attendance.prepareStatement(sql);
             preped.setString(1, group);
             preped.executeUpdate();
         } catch (SQLException e) {
@@ -307,7 +301,8 @@ public class DBManipulator {
         if(group_id == -1)
             return;
 
-        try(PreparedStatement preped = attendance.prepareStatement(sql)) {
+        try{
+            PreparedStatement preped = attendance.prepareStatement(sql);
             preped.setString(1, name);
             preped.setInt(2, group_id);
             preped.executeUpdate();
@@ -330,7 +325,8 @@ public class DBManipulator {
         if(group_id == -1)
             return;
 
-        try(PreparedStatement preped = attendance.prepareStatement(sql)) {
+        try{
+            PreparedStatement preped = attendance.prepareStatement(sql);
             preped.setString(1, date);
             preped.setInt(2, group_id);
             preped.setInt(3, student_id);
@@ -352,11 +348,12 @@ public class DBManipulator {
         if(group_id == -1)
             return;
 
-        try(PreparedStatement preped = attendance.prepareStatement(sql)){
+        try{
             /*ResultSet students = getAllStudents(group);
             while(students.next()){
                 deleteStudent(students.getInt("id"));
             }*/
+            PreparedStatement preped = attendance.prepareStatement(sql);
             preped.setInt(1, group_id);
             preped.executeUpdate();
         } catch (SQLException e) {
@@ -365,7 +362,8 @@ public class DBManipulator {
 
         sql = "DELETE FROM students WHERE group_id = ?";
 
-        try(PreparedStatement preped = attendance.prepareStatement(sql)){
+        try{
+            PreparedStatement preped = attendance.prepareStatement(sql);
             preped.setInt(1, group_id);
             preped.executeUpdate();
         } catch (SQLException e) {
@@ -374,7 +372,8 @@ public class DBManipulator {
 
         sql = "DELETE FROM attendance WHERE group_id = ?";
 
-        try(PreparedStatement preped = attendance.prepareStatement(sql)){
+        try{
+            PreparedStatement preped = attendance.prepareStatement(sql);
             preped.setInt(1, group_id);
             preped.executeUpdate();
         } catch (SQLException e) {
@@ -389,7 +388,8 @@ public class DBManipulator {
     public void deleteStudent(int student_id){
         String sql = "DELETE FROM students WHERE id = ?";
 
-        try(PreparedStatement preped = attendance.prepareStatement(sql)){
+        try{
+            PreparedStatement preped = attendance.prepareStatement(sql);
             deleteAttendance(student_id);
             preped.setInt(1, student_id);
             preped.executeUpdate();
@@ -401,7 +401,8 @@ public class DBManipulator {
     private void deleteAttendance(int student_id){
         String sql = "DELETE FROM attendance WHERE student_id = ?";
 
-        try(PreparedStatement preped = attendance.prepareStatement(sql)){
+        try{
+            PreparedStatement preped = attendance.prepareStatement(sql);
             preped.setInt(1, student_id);
             preped.executeUpdate();
         } catch (SQLException e) {
@@ -415,13 +416,14 @@ public class DBManipulator {
      * @param group new String unique identifier of a group
      */
     public void updateGroups(String old_group, String group){
-        String sql = "UPDATE groups SET group = ? WHERE id = ?";
+        String sql = "UPDATE groups SET group_string = ? WHERE id = ?";
 
         int group_id = getGroupId(old_group);
         if(group_id == -1)
             return;
 
-        try(PreparedStatement preped = attendance.prepareStatement(sql)) {
+        try {
+            PreparedStatement preped = attendance.prepareStatement(sql);
             preped.setString(1, group);
             preped.setInt(2, group_id);
             preped.executeUpdate();
@@ -437,13 +439,14 @@ public class DBManipulator {
      * @param group The new group of a student
      */
     public void updateStudents(int student_id, String name, String group){
-        String sql = "UPDATE groups SET name = ?, group_id = ? WHERE id = ?";
+        String sql = "UPDATE students SET name = ?, group_id = ? WHERE id = ?";
 
         int group_id = getGroupId(group);
         if(group_id == -1)
             return;
 
-        try(PreparedStatement preped = attendance.prepareStatement(sql)) {
+        try{
+            PreparedStatement preped = attendance.prepareStatement(sql);
             preped.setString(1, name);
             preped.setInt(2, group_id);
             preped.setInt(3, student_id);
@@ -461,10 +464,11 @@ public class DBManipulator {
      * @param attend boolean whether the student attended or not
      */
     public void updateAttendance(int update_student_id, String update_date, boolean attend){
-        String sql = "UPDATE groups SET attend = ? WHERE student_id = ? AND date = ?";
+        String sql = "UPDATE attendance SET attend = ? WHERE student_id = ? AND date = ?";
 
 
-        try(PreparedStatement preped = attendance.prepareStatement(sql)) {
+        try{
+            PreparedStatement preped = attendance.prepareStatement(sql);
             preped.setInt(1, attend? 1: 0);
             preped.setInt(2, update_student_id);
             preped.setString(3, update_date);
@@ -481,13 +485,14 @@ public class DBManipulator {
      * @param group the unique String identifier of a group
      */
     public void updateAttendance(int update_student_id, String group){
-        String sql = "UPDATE groups SET group_id = ? WHERE student_id = ?";
+        String sql = "UPDATE attendance SET group_id = ? WHERE student_id = ?";
 
         int group_id = getGroupId(group);
         if(group_id == -1)
             return;
 
-        try(PreparedStatement preped = attendance.prepareStatement(sql)) {
+        try{
+            PreparedStatement preped = attendance.prepareStatement(sql);
             preped.setInt(1, group_id);
             preped.setInt(2, update_student_id);
 
@@ -517,4 +522,53 @@ public class DBManipulator {
         }
     }
     */
+
+    public static void main(String[] args) {
+        DBManipulator manipulator = new DBManipulator();
+        /* Group insert */
+        manipulator.insertToGroups("group_1");
+        manipulator.insertToGroups("group_2");
+
+        /* Group get */
+        ResultSet set = manipulator.getAllGroups();
+
+        List<String> groups = new ArrayList<>();
+        try {
+            while (set.next()) {
+                groups.add(set.getString("group_string"));
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        /* Student insert (tested) */
+        //manipulator.insertToStudents("Ainoras Zukauskas", groups.get(0));
+        //manipulator.insertToStudents("Ainoras Zukauskas", groups.get(0));
+        //manipulator.insertToStudents("Ainoras Zukauskas", groups.get(0));
+        //manipulator.insertToStudents("Lukas Rimavicius", groups.get(1));
+
+        /* All student get */
+        set = manipulator.getAllStudents(groups.get(1));
+
+        try {
+            while (set.next()) {
+                System.out.print(set.getString("name"));
+                System.out.println(set.getInt("group_id"));
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        /* Single student get */
+        set = manipulator.getStudent(0);
+
+        try {
+            while (set.next()) {
+                System.out.print(set.getString("name"));
+                System.out.println(set.getInt("group_id"));
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
 }
