@@ -23,6 +23,11 @@ public class DBManipulator {
     Connection attendance;
     DatabaseMetaData attendance_meta;
 
+    /**
+     * Creates or opens the proper .sqlite file and establishes connection
+     * <p>
+     * Creates the necessary tables if they do not exist
+     */
     public DBManipulator(){
         attendance = createNewDatabase("attendance.sqlite");
         try{
@@ -241,6 +246,14 @@ public class DBManipulator {
         return -1;
     }
 
+    /**
+     * Get all students who attended or not by group and date interval
+     * @param group Unique String identifier of a group
+     * @param start String of the start of the needed interval in YYYY-MM-DD
+     * @param end String of the end of the needed interval in YYYY-MM-DD
+     * @param attend boolean telling whether we want a list of students who attended or not
+     * @return ResultSet of all students matching criteria
+     */
     public ResultSet getAllGroupAttend(String group, String start, String end, boolean attend){
         String sql = "SELECT student_id FROM attendance WHERE attend = ? AND group = ? AND date BETWEEN ? AND ?";
 
@@ -269,7 +282,7 @@ public class DBManipulator {
 
     /**
      * Insert new group
-     * @param group - Unique string
+     * @param group - Unique string identifier of a group
      */
     public void insertToGroups(String group){
         String sql = "INSERT INTO groups(group) VALUES(?)";
@@ -282,6 +295,11 @@ public class DBManipulator {
         }
     }
 
+    /**
+     * Insert new student
+     * @param name the name of the student
+     * @param group the group the student belongs to
+     */
     public void insertToStudents(String name, String group){
         String sql = "INSERT INTO students(name,group_id) VALUES(?,?)";
 
@@ -298,7 +316,13 @@ public class DBManipulator {
         }
     }
 
-    /* attendance - id, date, group_id, student_id, attend */
+    /**
+     * Insert new attendance of a student on a certain date
+     * @param date String of the date the student attended or not format YYYY-MM-DD
+     * @param group String unique identifier of the group of the student
+     * @param student_id int the Primary key of a student
+     * @param attend whether the student attended or not
+     */
     public void insertToAttendance(String date, String group, int student_id, boolean attend){
         String sql = "INSERT INTO attendance(date,group_id,student_id,attend) VALUES(?,?,?,?)";
 
@@ -317,6 +341,10 @@ public class DBManipulator {
         }
     }
 
+    /**
+     * Deletes selected group, all of the students belonging to that group, and all of the records of those students
+     * @param group String unique identifier that should be deleted
+     */
     public void deleteGroup(String group){
         String sql = "DELETE FROM groups WHERE id = ?";
 
@@ -325,10 +353,28 @@ public class DBManipulator {
             return;
 
         try(PreparedStatement preped = attendance.prepareStatement(sql)){
-            ResultSet students = getAllStudents(group);
+            /*ResultSet students = getAllStudents(group);
             while(students.next()){
                 deleteStudent(students.getInt("id"));
-            }
+            }*/
+            preped.setInt(1, group_id);
+            preped.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        sql = "DELETE FROM students WHERE group_id = ?";
+
+        try(PreparedStatement preped = attendance.prepareStatement(sql)){
+            preped.setInt(1, group_id);
+            preped.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        sql = "DELETE FROM attendance WHERE group_id = ?";
+
+        try(PreparedStatement preped = attendance.prepareStatement(sql)){
             preped.setInt(1, group_id);
             preped.executeUpdate();
         } catch (SQLException e) {
@@ -336,6 +382,10 @@ public class DBManipulator {
         }
     }
 
+    /**
+     * Deletes selected student and all their records
+     * @param student_id int Primary key of a student
+     */
     public void deleteStudent(int student_id){
         String sql = "DELETE FROM students WHERE id = ?";
 
@@ -358,4 +408,113 @@ public class DBManipulator {
             System.out.println(e.getMessage());
         }
     }
+
+    /**
+     * Updates the unique identifier of a selected group
+     * @param old_group old String unique identifier of a group
+     * @param group new String unique identifier of a group
+     */
+    public void updateGroups(String old_group, String group){
+        String sql = "UPDATE groups SET group = ? WHERE id = ?";
+
+        int group_id = getGroupId(old_group);
+        if(group_id == -1)
+            return;
+
+        try(PreparedStatement preped = attendance.prepareStatement(sql)) {
+            preped.setString(1, group);
+            preped.setInt(2, group_id);
+            preped.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    /**
+     * Updates the selected students name and group
+     * @param student_id int Primary key of a student
+     * @param name The new name of a student
+     * @param group The new group of a student
+     */
+    public void updateStudents(int student_id, String name, String group){
+        String sql = "UPDATE groups SET name = ?, group_id = ? WHERE id = ?";
+
+        int group_id = getGroupId(group);
+        if(group_id == -1)
+            return;
+
+        try(PreparedStatement preped = attendance.prepareStatement(sql)) {
+            preped.setString(1, name);
+            preped.setInt(2, group_id);
+            preped.setInt(3, student_id);
+            preped.executeUpdate();
+            updateAttendance(student_id, group);
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    /**
+     * Updates the attendance of a student on a certain date
+     * @param update_student_id the int Primary Key of student whose attendance is updated (Part of Composite Key)
+     * @param update_date the String of date to be updated format YYYY-MM-DD (Part of Composite Key)
+     * @param attend boolean whether the student attended or not
+     */
+    public void updateAttendance(int update_student_id, String update_date, boolean attend){
+        String sql = "UPDATE groups SET attend = ? WHERE student_id = ? AND date = ?";
+
+
+        try(PreparedStatement preped = attendance.prepareStatement(sql)) {
+            preped.setInt(1, attend? 1: 0);
+            preped.setInt(2, update_student_id);
+            preped.setString(3, update_date);
+
+            preped.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    /**
+     * Updates the group of every attendance record of a student
+     * @param update_student_id the int Primary Key of student whose group is updated
+     * @param group the unique String identifier of a group
+     */
+    public void updateAttendance(int update_student_id, String group){
+        String sql = "UPDATE groups SET group_id = ? WHERE student_id = ?";
+
+        int group_id = getGroupId(group);
+        if(group_id == -1)
+            return;
+
+        try(PreparedStatement preped = attendance.prepareStatement(sql)) {
+            preped.setInt(1, group_id);
+            preped.setInt(2, update_student_id);
+
+            preped.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    /*
+    public void updateAttendance(int update_student_id, String update_date, String date, String group, int student_id, boolean attend){
+        String sql = "UPDATE groups SET date = ?, group_id = ?, student_id = ?, attend = ? WHERE student_id = ? AND date = ?";
+
+        int group_id = getGroupId(group);
+        if(group_id == -1)
+            return;
+
+        try(PreparedStatement preped = attendance.prepareStatement(sql)) {
+            preped.setString(1, date);
+            preped.setInt(2, group_id);
+            preped.setInt(3, student_id);
+            preped.setInt(4, attend? 1: 0);
+            preped.setInt(5, student_id);
+            preped.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+    */
 }
