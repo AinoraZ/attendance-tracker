@@ -18,7 +18,7 @@ import java.util.Properties;
  * @version 2018-03-19
  */
 
-public abstract class Window extends JFrame{
+public abstract class Window extends JFrame implements WindowInterface{
     JPanel mainPane = new JPanel(new BorderLayout());
     JPanel labelPane = new JPanel(new GridLayout(0, 1));
     JPanel fieldPane = new JPanel(new GridLayout(0, 1));
@@ -34,18 +34,6 @@ public abstract class Window extends JFrame{
         mainPane.add(endPane, BorderLayout.PAGE_END);
     }
 
-    public void showUI(){
-        this.add(mainPane);
-
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.pack();
-
-        Rectangle r = this.getBounds();
-        this.setSize(r.width + 20, r.height);
-
-        this.setVisible(true);
-    }
-
     public JDatePickerImpl generateDatePicker(){
         UtilDateModel model = new UtilDateModel();
         Properties p = new Properties();
@@ -57,8 +45,6 @@ public abstract class Window extends JFrame{
 
         return datePicker;
     }
-
-    public abstract void redraw();
 }
 
 

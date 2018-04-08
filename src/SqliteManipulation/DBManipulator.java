@@ -3,6 +3,9 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.xml.transform.Result;
 import java.sql.*;
+import java.text.ParseException;
+import java.util.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -91,20 +94,23 @@ public class DBManipulator {
         }
     }
 
-    private ResultSet getMultipleStudents(List<Integer> id){
-        String sql = "SELECT * FROM students WHERE id IN ?";
+    /* DEPRICATED */
+    private List<ResultSet> getMultipleStudents(List<Integer> ids){
+        if(ids.size() == 0)
+            return null;
 
-        try (PreparedStatement stmt  = attendance.prepareStatement(sql)){
-            Integer[] data = id.toArray(new Integer[id.size()]);
-            java.sql.Array sqlArray = attendance.createArrayOf("integer", data);
-            stmt.setArray(1, sqlArray);
-            ResultSet rs = stmt.executeQuery();
-            return rs;
+        List<ResultSet> rs = new ArrayList<>();
+        for(int id: ids){
+            ResultSet temp_set = getStudent(id);
+            rs.add(temp_set);
+            try {
+                System.out.println(rs.get(0).next());
+            }
+            catch(SQLException e){
+
+            }
         }
-        catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return null;
+        return rs;
     }
 
     private int getGroupId(String group){
@@ -191,7 +197,7 @@ public class DBManipulator {
      * @param attend boolean value of desired attendance
      * @return ResultSet of all students who attended or not on a certain date
      */
-    public ResultSet getGroupAttend(String group, String date, boolean attend){
+    public List<Integer> getGroupAttend(String group, String date, boolean attend){
         String sql = "SELECT student_id FROM attendance WHERE date = ? AND attend = ? AND group_id = ?";
 
         int group_id = getGroupId(group);
@@ -209,7 +215,7 @@ public class DBManipulator {
                 int student_id = rs.getInt("student_id");
                 sets.add(student_id);
             }
-            return getMultipleStudents(sets);
+            return sets;
         }
         catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -229,6 +235,7 @@ public class DBManipulator {
         try{
             PreparedStatement stmt  = attendance.prepareStatement(sql);
             stmt.setString(1, date);
+            stmt.setInt(2, student_id);
             ResultSet rs = stmt.executeQuery();
             return rs.getInt("attend");
         }
@@ -238,40 +245,6 @@ public class DBManipulator {
         return -1;
     }
 
-    /**
-     * Get all students who attended or not by group and date interval
-     * @param group Unique String identifier of a group
-     * @param start String of the start of the needed interval in YYYY-MM-DD
-     * @param end String of the end of the needed interval in YYYY-MM-DD
-     * @param attend boolean telling whether we want a list of students who attended or not
-     * @return ResultSet of all students matching criteria
-     */
-    public ResultSet getAllGroupAttend(String group, String start, String end, boolean attend){
-        String sql = "SELECT student_id FROM attendance WHERE attend = ? AND group_id = ? AND date BETWEEN ? AND ?";
-
-        int group_id = getGroupId(group);
-        if(group_id == -1)
-            return null;
-
-        try{
-            PreparedStatement stmt  = attendance.prepareStatement(sql);
-            stmt.setInt(1, attend? 1 : 0);
-            stmt.setInt(2, group_id);
-            stmt.setString(3, start);
-            stmt.setString(4, end);
-            List<Integer> sets = new ArrayList<>();
-            ResultSet rs = stmt.executeQuery();
-            while(rs.next()){
-                int student_id = rs.getInt("student_id");
-                sets.add(student_id);
-            }
-            return getMultipleStudents(sets);
-        }
-        catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return null;
-    }
 
     /**
      * Insert new group
@@ -523,7 +496,7 @@ public class DBManipulator {
     }
     */
 
-    public static void main(String[] args) {
+    public static void _test() {
         DBManipulator manipulator = new DBManipulator();
         /* Group insert */
         manipulator.insertToGroups("group_1");
@@ -542,7 +515,7 @@ public class DBManipulator {
         }
 
         /* Student insert (tested) */
-        //manipulator.insertToStudents("Ainoras Zukauskas", groups.get(0));
+        manipulator.insertToStudents("Ainoras Zukauskas", groups.get(0));
         //manipulator.insertToStudents("Ainoras Zukauskas", groups.get(0));
         //manipulator.insertToStudents("Ainoras Zukauskas", groups.get(0));
         //manipulator.insertToStudents("Lukas Rimavicius", groups.get(1));
@@ -560,7 +533,7 @@ public class DBManipulator {
         }
 
         /* Single student get */
-        set = manipulator.getStudent(0);
+        set = manipulator.getStudent(1);
 
         try {
             while (set.next()) {
@@ -570,5 +543,35 @@ public class DBManipulator {
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
+
+        if(manipulator.getStudentOnDate("2018-04-12", 1) == -1)
+            manipulator.insertToAttendance("2018-04-12", groups.get(0), 1, false);
+        int attended = manipulator.getStudentOnDate("2018-04-12", 1);
+        System.out.println("Attended " + attended + " Expected: 0");
+
+        if(manipulator.getStudentOnDate("2018-04-12", 2) == -1)
+            manipulator.insertToAttendance("2018-04-12", groups.get(0), 2, true);
+        if(manipulator.getStudentOnDate("2018-04-12", 3) == -1)
+            manipulator.insertToAttendance("2018-04-12", groups.get(0), 3, true);
+
+        List<Integer> id_set = manipulator.getGroupAttend(groups.get(0), "2018-04-12", true);
+
+        try{
+            for(int temp_id: id_set){
+                set = manipulator.getStudent(temp_id);
+                while (set.next()){
+                    System.out.print(set.getString("id"));
+                    System.out.print(" " + set.getString("name"));
+                    System.out.println(" " + set.getInt("group_id"));
+                }
+            }
+        }
+        catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        manipulator.updateGroups("group_1", "group_1");
+        manipulator.updateStudents(1, "Lukas Glavinskas", "group_1");
+        manipulator.updateAttendance(1, "2018-04-12", false);
     }
 }
