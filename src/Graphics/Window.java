@@ -20,17 +20,31 @@ import java.util.Properties;
 
 public abstract class Window extends JFrame implements WindowInterface{
     JPanel mainPane = new JPanel(new BorderLayout());
-    JPanel labelPane = new JPanel(new GridLayout(0, 1));
-    JPanel fieldPane = new JPanel(new GridLayout(0, 1));
-    JPanel endPane = new JPanel(new GridLayout(0, 2));
+    JPanel startPane = new JPanel(new GridLayout(0, 1));
+    JPanel middlePane = new JPanel(new GridLayout(0, 1));
+    JPanel endPane = new JPanel(new GridLayout(0, 1));
 
     /**
      * Sets up the main JPanel for the window instance
      */
     public Window(){
         mainPane.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
-        mainPane.add(labelPane, BorderLayout.CENTER);
-        mainPane.add(fieldPane, BorderLayout.LINE_END);
+        mainPane.add(startPane, BorderLayout.PAGE_START);
+        mainPane.add(middlePane, BorderLayout.CENTER);
+        mainPane.add(endPane, BorderLayout.PAGE_END);
+    }
+
+    public void reApply(){
+        mainPane.remove(startPane);
+        mainPane.remove(middlePane);
+        mainPane.remove(endPane);
+
+        startPane = new JPanel(new GridLayout(0, 1));
+        middlePane = new JPanel(new GridLayout(0, 1));
+        endPane = new JPanel(new GridLayout(0, 1));
+
+        mainPane.add(startPane, BorderLayout.PAGE_START);
+        mainPane.add(middlePane, BorderLayout.CENTER);
         mainPane.add(endPane, BorderLayout.PAGE_END);
     }
 

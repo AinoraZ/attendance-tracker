@@ -1,11 +1,17 @@
 package Graphics;
 
+import SqliteManipulation.DBManipulator;
 import javax.swing.*;
 import java.awt.*;
 
 public class AttendanceEditor extends Window{
-    public AttendanceEditor(MainWindow parent, String date){
+    public AttendanceEditor(MainWindow parent, String date, String group, int student, DBManipulator manipulator){
+        if(date.equals(""))
+            return;
 
+        System.out.println("Date: " + date);
+        System.out.println("Student: " + student);
+        System.out.println("Group: " + group);
     }
 
     public void showUI() {
