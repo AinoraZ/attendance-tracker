@@ -111,6 +111,7 @@ public class MainWindow extends Window {
         System.out.println(group);
         try{
             ResultSet temp_set = manipulator.getAllStudents(group);
+            students.addItem(new ComboItem("--ALL STUDENTS--", -1));
             while(temp_set.next()){
                 students.addItem(new ComboItem(temp_set.getString("name"), temp_set.getInt("id")));
             }

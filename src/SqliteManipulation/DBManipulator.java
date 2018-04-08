@@ -383,6 +383,36 @@ public class DBManipulator {
         }
     }
 
+    public void deleteAttendance(String date, int student_id){
+        String sql = "DELETE FROM attendance WHERE date = ? AND student_id = ?";
+
+        try{
+            PreparedStatement preped = attendance.prepareStatement(sql);
+            preped.setString(1, date);
+            preped.setInt(2, student_id);
+            preped.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void deleteAttendance(String date, String group){
+        String sql = "DELETE FROM attendance WHERE date = ? AND group_id = ?";
+
+        int group_id = getGroupId(group);
+        if(group_id == -1)
+            return;
+
+        try{
+            PreparedStatement preped = attendance.prepareStatement(sql);
+            preped.setString(1, date);
+            preped.setInt(2, group_id);
+            preped.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
     /**
      * Updates the unique identifier of a selected group
      * @param old_group old String unique identifier of a group

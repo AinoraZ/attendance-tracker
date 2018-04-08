@@ -32,7 +32,7 @@ public class GroupEditor extends Window{
         JTextPane group_name = new JTextPane(new DefaultStyledDocument(){
             @Override
             public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
-                if ((getLength() + str.length()) < 36) {
+                if ((getLength() + str.length()) < 36 && !str.equals("\n")) {
                     super.insertString(offs, str, a);
                 }
             }
@@ -58,7 +58,7 @@ public class GroupEditor extends Window{
                 JTextPane student_name = new JTextPane(new DefaultStyledDocument(){
                     @Override
                     public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
-                        if ((getLength() + str.length()) < 28) {
+                        if ((getLength() + str.length()) < 28 && !str.equals("\n")) {
                             super.insertString(offs, str, a);
                         }
                     }
@@ -76,7 +76,6 @@ public class GroupEditor extends Window{
                     //resultPane.add(new JLabel(Integer.toString(student_id)));
                     resultPane.add(new JLabel(students.getString("name")));
                     resultPane.add(deleteStudent(student_id));
-
                 }
             }
         }
