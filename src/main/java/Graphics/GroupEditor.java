@@ -22,8 +22,8 @@ public class GroupEditor extends Window{
     public GroupEditor(MainWindow parent, DBManipulator manipulator){
         this.parent = parent;
         this.manipulator = manipulator;
-        showUI();
-        redraw();
+        //showUI();
+        //redraw();
     }
 
     public void addGroups(){
@@ -32,7 +32,7 @@ public class GroupEditor extends Window{
         JTextPane group_name = new JTextPane(new DefaultStyledDocument(){
             @Override
             public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
-                if ((getLength() + str.length()) < 36 && !str.equals("\n")) {
+                if ((getLength() + str.length()) < 30 && !str.equals("\n")) {
                     super.insertString(offs, str, a);
                 }
             }
@@ -50,9 +50,27 @@ public class GroupEditor extends Window{
             ResultSet set = manipulator.getAllGroups();
             while(set.next()){
                 String group_string = set.getString("group_string");
-                resultPane.add(new JLabel(group_string));
-                //resultPane.add(new JLabel());
-                resultPane.add(new JLabel());
+                JTextPane group_name_pane;
+                try {
+                    group_name_pane = new JTextPane(new DefaultStyledDocument(){
+                        @Override
+                        public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
+                            if ((getLength() + str.length()) < 30 && !str.equals("\n")) {
+                                super.insertString(offs, str, a);
+                            }
+                        }
+                    });
+
+                    group_name_pane.getStyledDocument().insertString(0, group_string, null);
+                    resultPane.add(group_name_pane);
+                    resultPane.add(editGroupButton(group_string, group_name_pane));
+                }
+                catch (BadLocationException e){
+                    System.out.println(e.getMessage());
+                    resultPane.add(new JLabel(group_string));
+                    resultPane.add(new JLabel());
+                }
+
                 resultPane.add(deleteButton(group_string));
 
                 JTextPane student_name = new JTextPane(new DefaultStyledDocument(){
@@ -100,6 +118,26 @@ public class GroupEditor extends Window{
         });
 
         return delete;
+    }
+
+    private JButton editGroupButton(String group_name, JTextPane new_group){
+        JButton edit = new JButton("EDIT name");
+        GroupEditor _this = this;
+
+        edit.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(!new_group.getText().equals(""))
+                    if(!manipulator.updateGroups(group_name, new_group.getText())) {
+                        JOptionPane.showMessageDialog(null, "Failed to rename group", "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                        new_group.setText(group_name);
+                    }
+                    redraw();
+            }
+        });
+
+        return edit;
     }
 
     private JButton deleteButton(String group){
@@ -155,6 +193,7 @@ public class GroupEditor extends Window{
         this.setResizable(false);
 
         this.add(mainPane);
+        this.setTitle("Group Editor");
     }
 
     public void redraw(){

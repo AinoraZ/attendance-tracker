@@ -28,6 +28,7 @@ public class AttendanceEditor extends Window{
 
 
     public AttendanceEditor(MainWindow parent, String date, String group, int student, DBManipulator manipulator){
+        //constructorImitation(parent, date, group, student, manipulator);
         if(date.equals(""))
             return;
 
@@ -164,8 +165,8 @@ public class AttendanceEditor extends Window{
             this.setSize(600, r.height);
         else
             this.setSize(600, 500);
-
         this.setVisible(true);
+        this.setTitle("Attendance Marking");
     }
 
     public void redraw(){

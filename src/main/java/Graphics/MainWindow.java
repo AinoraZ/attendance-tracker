@@ -7,6 +7,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -18,9 +19,13 @@ public class MainWindow extends Window {
     JDatePickerImpl date = generateDatePicker();
     JDatePickerImpl start = generateDatePicker();
     JDatePickerImpl end = generateDatePicker();
+    GroupEditor editorOfGroups;
+    AttendanceEditor editorOfAttendance = null;
+    WindowPrinter printerToWindow;
 
     public MainWindow() {
         redraw();
+        editorOfGroups = new GroupEditor(this, manipulator);
     }
 
     private JPanel generateGroupEdit() {
@@ -32,7 +37,8 @@ public class MainWindow extends Window {
         insert_data.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new GroupEditor(_this, manipulator);
+                editorOfGroups.showUI();
+                editorOfGroups.redraw();
             }
         });
 
@@ -88,12 +94,12 @@ public class MainWindow extends Window {
             public void actionPerformed(ActionEvent e) {
                 ComboItem item = (ComboItem) students.getSelectedItem();
                 if(item != null && groups.getSelectedItem() != null)
-                    new AttendanceEditor(_this,
-                                         date.getJFormattedTextField().getText(),
-                                         groups.getSelectedItem().toString(),
-                                         item.getValue(),
-                                         manipulator
-                                        );
+                    setNewAttendanceEditor(_this,
+                                            date.getJFormattedTextField().getText(),
+                                            groups.getSelectedItem().toString(),
+                                            item.getValue(),
+                                            manipulator
+                                          );
             }
         });
 
@@ -105,10 +111,15 @@ public class MainWindow extends Window {
         return attendanceEdit;
     }
 
+    private void setNewAttendanceEditor(MainWindow parent, String date, String group, int student, DBManipulator manipulator){
+        if(editorOfAttendance != null)
+            editorOfAttendance.dispose();
+        editorOfAttendance = new AttendanceEditor(this, date, group, student, manipulator);
+    }
+
     private void putStudents(String group){
         if(group == null)
             return;
-        System.out.println(group);
         try{
             ResultSet temp_set = manipulator.getAllStudents(group);
             students.addItem(new ComboItem("--ALL STUDENTS--", -1));
@@ -137,22 +148,13 @@ public class MainWindow extends Window {
         get_list.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
-            }
-        });
-
-        JButton print_list = new JButton("Print List");
-        print_list.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
+                new WindowPrinter(_this, start.getJFormattedTextField().getText(), end.getJFormattedTextField().getText(), manipulator);
             }
         });
 
         printing.add(start);
         printing.add(end);
         printing.add(get_list);
-        printing.add(print_list);
 
         return printing;
     }
@@ -201,32 +203,6 @@ public class MainWindow extends Window {
         MainWindow window = new MainWindow();
         window.showUI();
     }
-
-    /*
-    public List<List<Integer>> getAllGroupAttend(String group, String start, String end, boolean attend){
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        try {
-            java.util.Date convertedStart = sdf.parse(start);
-            java.util.Date convertedEnd = sdf.parse(end);
-
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(convertedStart);
-            List<List<Integer>> list_set = new ArrayList<List<Integer>>();
-            while (cal.getTime().before(convertedEnd) || cal.getTime().equals(convertedEnd)) {
-                String formatted = sdf.format(cal.getTime());
-                cal.add(Calendar.DATE, 1);
-
-                List<Integer> temp_list = getGroupAttend(group, formatted, attend);
-                list_set.add(temp_list);
-            }
-
-            return list_set;
-        }
-        catch (ParseException e){
-            return null;
-        }
-    }
-    */
 
     class ComboItem{
         private String key;

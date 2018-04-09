@@ -418,12 +418,12 @@ public class DBManipulator {
      * @param old_group old String unique identifier of a group
      * @param group new String unique identifier of a group
      */
-    public void updateGroups(String old_group, String group){
+    public boolean updateGroups(String old_group, String group){
         String sql = "UPDATE groups SET group_string = ? WHERE id = ?";
 
         int group_id = getGroupId(old_group);
         if(group_id == -1)
-            return;
+            return false;
 
         try {
             PreparedStatement preped = attendance.prepareStatement(sql);
@@ -432,7 +432,9 @@ public class DBManipulator {
             preped.executeUpdate();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+            return false;
         }
+        return true;
     }
 
     /**
