@@ -9,9 +9,15 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * AttendanceEditor class responsible for marking student attendance
+ *
+ * @author Ainoras Žukauskas
+ * @version 2018-04-10
+ */
 
 public class AttendanceEditor extends Window{
     MainWindow parent;
@@ -153,11 +159,25 @@ public class AttendanceEditor extends Window{
 
     }
 
+    /**
+     * Prepares the window for viewing
+     */
     public void showUI() {
         this.add(mainPane);
         mainPane.add(scrollPane);
 
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        this.setVisible(true);
+
+        redraw();
+
+        this.setTitle("Attendance Marking");
+    }
+
+    /**
+     * Redraws the window after an update has happened
+     */
+    public void redraw(){
         this.pack();
 
         Rectangle r = this.getBounds();
@@ -165,12 +185,6 @@ public class AttendanceEditor extends Window{
             this.setSize(600, r.height);
         else
             this.setSize(600, 500);
-        this.setVisible(true);
-        this.setTitle("Attendance Marking");
-    }
-
-    public void redraw(){
-
     }
 
 }

@@ -17,6 +17,15 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 
+/**
+ * WindowPrinter class responsible for printing all the data to a window
+ * <p>
+ * Also responsible for converting said data to a PDF format
+ *
+ * @author Ainoras Žukauskas
+ * @version 2018-04-10
+ */
+
 public class WindowPrinter extends Window {
     MainWindow parent;
     String startDate;
@@ -40,7 +49,7 @@ public class WindowPrinter extends Window {
         showUI();
     }
 
-    public void generatePrinting(){
+    private void generatePrinting(){
         printingArea = new JTextArea("");
         printingArea.setEditable(false);
         scrollPane = new JScrollPane(printingArea);
@@ -129,8 +138,8 @@ public class WindowPrinter extends Window {
                                 if(!singleGroup){
                                     printingArea.append("\t" + group_string + "\n");
                                     table.addCell(group_string);
-                                    table.addCell("");
-                                    table.addCell("");
+                                    table.addCell("Name");
+                                    table.addCell("Attendance");
                                     singleGroup = true;
 
                                     PdfPCell[] cells = table.getRow(tableIndex).getCells();
@@ -160,12 +169,12 @@ public class WindowPrinter extends Window {
         }
     }
 
-    public void generatePdf(){
-        Document document = new Document();
+    private void generatePdf(){
+        Rectangle pageSize = new Rectangle(800,14400);
+        Document document = new Document(pageSize, 36, 76, 36, 76);
         try {
             PdfWriter.getInstance(document, new FileOutputStream("attendance.pdf"));
             document.open();
-            //document.add(new Paragraph(text));
             document.add(table);
             document.close();
         }
@@ -179,7 +188,24 @@ public class WindowPrinter extends Window {
                 JOptionPane.INFORMATION_MESSAGE);
     }
 
+    /**
+     * Prepares the window for viewing
+     */
     public void showUI(){
+        redraw();
+
+        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        this.setSize(560, 460);
+
+        this.setVisible(true);
+        this.setTitle("List Print");
+
+    }
+
+    /**
+     * Redraws the window after an update has happened
+     */
+    public void redraw(){
         JButton print_list = new JButton("Print List");
         print_list.addActionListener(new ActionListener() {
             @Override
@@ -192,16 +218,5 @@ public class WindowPrinter extends Window {
 
         mainPane.add(scrollPane);
         this.add(mainPane);
-
-        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        this.setSize(560, 460);
-
-        this.setVisible(true);
-        this.setTitle("List Print");
-
-    }
-
-    public void redraw(){
-
     }
 }

@@ -15,10 +15,10 @@ import java.util.Properties;
  * Window class responsible for the main program GUI interface window
  *
  * @author Ainoras Žukauskas
- * @version 2018-03-19
+ * @version 2018-04-10
  */
 
-public abstract class Window extends JFrame implements WindowInterface{
+public abstract class Window extends JFrame implements Windowable {
     JPanel mainPane = new JPanel(new BorderLayout());
     JPanel startPane = new JPanel(new GridLayout(0, 1));
     JPanel middlePane = new JPanel(new GridLayout(0, 1));
@@ -34,6 +34,9 @@ public abstract class Window extends JFrame implements WindowInterface{
         mainPane.add(endPane, BorderLayout.PAGE_END);
     }
 
+    /**
+     * Re-applies the set up done in the constructor
+     */
     public void reApply(){
         mainPane.remove(startPane);
         mainPane.remove(middlePane);
@@ -48,6 +51,10 @@ public abstract class Window extends JFrame implements WindowInterface{
         mainPane.add(endPane, BorderLayout.PAGE_END);
     }
 
+    /**
+     * Generates a JDatePickerImpl instance of YYYY-MM-DD
+     * @return JDatePickerImpl instance
+     */
     public JDatePickerImpl generateDatePicker(){
         UtilDateModel model = new UtilDateModel();
         Properties p = new Properties();
@@ -62,8 +69,7 @@ public abstract class Window extends JFrame implements WindowInterface{
 }
 
 
-class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
-
+final class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
     private String datePattern = "yyyy-MM-dd";
     private SimpleDateFormat dateFormatter = new SimpleDateFormat(datePattern);
 
@@ -73,7 +79,7 @@ class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
     }
 
     @Override
-    public String valueToString(Object value) throws ParseException {
+    public String valueToString(Object value){
         if (value != null) {
             Calendar cal = (Calendar) value;
             return dateFormatter.format(cal.getTime());
@@ -81,5 +87,4 @@ class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
 
         return "";
     }
-
 }

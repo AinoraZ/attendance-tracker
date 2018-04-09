@@ -12,6 +12,13 @@ import java.awt.event.ActionListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * GroupEditor class responsible for editing/adding of groups and adding of students to said groups
+ *
+ * @author Ainoras Žukauskas
+ * @version 2018-04-10
+ */
+
 public class GroupEditor extends Window{
     JScrollPane scrollPane = new JScrollPane();
     JPanel resultPane = null;
@@ -185,6 +192,9 @@ public class GroupEditor extends Window{
         return delete;
     }
 
+    /**
+     * Prepares the window for viewing
+     */
     public void showUI() {
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.pack();
@@ -196,6 +206,9 @@ public class GroupEditor extends Window{
         this.setTitle("Group Editor");
     }
 
+    /**
+     * Redraws the window after an update has happened
+     */
     public void redraw(){
         int policy = scrollPane.getVerticalScrollBar().getValue();
         this.remove(mainPane);

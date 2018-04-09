@@ -1,6 +1,7 @@
 package Graphics;
 
 import SqliteManipulation.DBManipulator;
+import com.itextpdf.text.Jpeg;
 import org.jdatepicker.impl.JDatePickerImpl;
 
 import javax.swing.*;
@@ -11,7 +12,9 @@ import java.awt.event.WindowEvent;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-
+/**
+ * The Main Window of the program. Responsible for accessing all other Windows.
+ */
 public class MainWindow extends Window {
     JComboBox groups = new JComboBox();
     JComboBox students = new JComboBox();
@@ -20,12 +23,35 @@ public class MainWindow extends Window {
     JDatePickerImpl start = generateDatePicker();
     JDatePickerImpl end = generateDatePicker();
     GroupEditor editorOfGroups;
+    StudentEditor editorOfStudents;
     AttendanceEditor editorOfAttendance = null;
-    WindowPrinter printerToWindow;
 
+    /**
+     * Draws the Window and sets up the other Window instances.
+     */
     public MainWindow() {
         redraw();
         editorOfGroups = new GroupEditor(this, manipulator);
+        editorOfStudents = new StudentEditor(this, manipulator);
+    }
+
+    private JPanel generateStudentEdit(){
+        JPanel studentEdit = new JPanel(new GridLayout(0,1));
+
+        MainWindow _this = this;
+        JButton insert_data = new JButton("Edit Student Data");
+
+        insert_data.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                editorOfStudents.showUI();
+                editorOfStudents.redraw();
+            }
+        });
+
+        studentEdit.add(new JLabel("Student data editing"));
+        studentEdit.add(insert_data);
+        return studentEdit;
     }
 
     private JPanel generateGroupEdit() {
@@ -42,6 +68,7 @@ public class MainWindow extends Window {
             }
         });
 
+        groupEdit.add(new JLabel("Student/Group editing"));
         groupEdit.add(insert_data);
         return groupEdit;
     }
@@ -159,18 +186,24 @@ public class MainWindow extends Window {
         return printing;
     }
 
+    /**
+     * Prepares the window for viewing
+     */
     public void showUI() {
         this.add(mainPane);
 
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.pack();
 
-        this.setSize(560, 460);
+        this.setSize(560, 530);
 
         this.setVisible(true);
         this.setTitle("Attendance program");
     }
 
+    /**
+     * Redraws the window after an update has happened
+     */
     public void redraw(){
         this.getContentPane().removeAll();
 
@@ -182,21 +215,22 @@ public class MainWindow extends Window {
         JPanel groupEdit = generateGroupEdit();
         JPanel attendanceEdit = generateAttendanceEdit();
         JPanel printing = generatePrinting();
+        JPanel student = generateStudentEdit();
 
-        startPane.add(new JLabel("Student/Group editing"));
         middlePane.add(groupEdit);
         //middlePane.add(new JSeparator(SwingConstants.HORIZONTAL));
         middlePane.add(new JLabel("Attendance Marking"));
         middlePane.add(attendanceEdit);
         middlePane.add(new JLabel("Listing options"));
         middlePane.add(printing);
+        middlePane.add(student);
 
         this.add(mainPane);
 
         this.revalidate();
         this.repaint();
 
-        this.setSize(560, 460);
+        this.setSize(560, 530);
     }
 
     public static void main(String[] args){
@@ -208,6 +242,11 @@ public class MainWindow extends Window {
         private String key;
         private int value;
 
+        /**
+         * Sets the given parameters for the storage class
+         * @param key String key which is shown by JComboBox
+         * @param value int underlying value
+         */
         public ComboItem(String key, int value){
             this.key = key;
             this.value = value;
@@ -218,10 +257,10 @@ public class MainWindow extends Window {
             return key;
         }
 
-        public String getKey() {
-            return key;
-        }
-
+        /**
+         * Getter of value
+         * @return int underlying value
+         */
         public int getValue() {
             return value;
         }

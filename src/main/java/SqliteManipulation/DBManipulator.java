@@ -417,6 +417,7 @@ public class DBManipulator {
      * Updates the unique identifier of a selected group
      * @param old_group old String unique identifier of a group
      * @param group new String unique identifier of a group
+     * @return boolean value. True if success, False otherwise.
      */
     public boolean updateGroups(String old_group, String group){
         String sql = "UPDATE groups SET group_string = ? WHERE id = ?";
